@@ -68,39 +68,39 @@ class GMail:
         print('Email sent')
 
 
-    def read(self):
-
+    def read(self, email_from, key_type):
         mail = imaplib.IMAP4_SSL('imap.gmail.com')
-        print('email:', self.email)
         mail.login(self.email, self.password)
-        mail.select("inbox")
-        _, search_data = mail.search(None, 'UNSEEN')
+        mail.select(mailbox="Inbox", readonly=True)
+        #mail.select(mailbox="Inbox")
 
-        my_messages = list()
-        for num in search_data[0].split():
+        key_from = "From"        
+        _, emails_id = mail.search(None, key_from, email_from, key_type)
+
+        my_messages = list()                
+        for num in emails_id[0].split():
             email_data = {}
             _, data = mail.fetch(num, '(RFC822)')
-            _, b = data[0]
-            email_message = email.message_from_bytes(b)
+            _, email_text = data[0]
+            email_text = email_text.decode('utf-8')
+            email_text = email.message_from_string(email_text)            
 
-            for header in ['subject', 'to', 'from', 'date']:
-                print("{}: {}".format(header, email_message[header]))
-                email_data[header] = email_message[header]
-
-            for part in email_message.walk():
+            #print(email_text.keys())
+            for header in ['Subject', 'To', 'From', 'Date']:
+                #print("{}: {}".format(header, email_text[header]))
+                email_data[header] = email_text[header]
+            
+            for part in email_text.walk():
                 if part.get_content_type() == "text/plain":
                     body = part.get_payload(decode=True)
-                    #email_data['body'] = body
+                    email_data['body'] = body
                     #print(body.decode())
                 elif part.get_content_type() == "text/html":
                     html_body = part.get_payload(decode=True)
-                    #email_data['html_body'] = html_body
-                    #print(html_body.decode())
-            print()
-            #exit()
-            #my_messages.append(email_data)
+                    email_data['html_body'] = html_body
+                    #print(html_body.decode())            
+            my_messages.append(email_data)
 
-            print(my_messages)
         return my_messages
 
 
@@ -110,15 +110,15 @@ class GMail:
 
 if __name__ == '__main__':
     
-    mail = GMail()
+    mail = GMail("C:/Users/Eduardo/Documents/PROGRAMS/Credentials")
     #mail.set_receiver('eduardo.statistic@gmail.com')
     #mail.set_subject('Email test alpha')
 
     #message = """
     #        <p>Parágrafo1</p>
     #        <p>Parágrafo2</p>
-    #        """
+    #        """            
     #mail.send(email_body=message)
-
-    mail.read()
+    
+    mail.read(email_from = "contatim@faturatim.com.br", key_type = 'UnSeen')
 
